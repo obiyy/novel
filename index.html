@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密室の真実</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        touch-action: manipulation;
+    }
+
+    #game-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #background {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        transition: background-image 0.5s ease;
+    }
+
+    #character {
+        position: absolute;
+        bottom: 0;
+        right: 10%;
+        width: 300px;
+        height: 400px;
+        background-size: contain;
+        background-position: bottom;
+        background-repeat: no-repeat;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+    }
+
+    #text-box {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 800px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 3px solid #8b4513;
+        border-radius: 10px;
+        padding: 20px;
+        z-index: 10;
+    }
+
+    #character-name {
+        color: #ffd700;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    #text-content {
+        color: #ffffff;
+        font-size: 16px;
+        line-height: 1.8;
+        min-height: 60px;
+    }
+
+    #choices {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .choice-button {
+        background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+        color: #ffffff;
+        border: 2px solid #666;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+    }
+
+    .choice-button:hover {
+        background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+        border-color: #888;
+        transform: translateX(5px);
+    }
+
+    .choice-button:active {
+        transform: scale(0.98);
+    }
+
+    #title-screen {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        transition: opacity 0.5s ease;
+    }
+
+    #title-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #game-title {
+        font-size: 48px;
+        color: #ffd700;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        margin-bottom: 30px;
+    }
+
+    #start-button {
+        background: linear-gradient(to bottom, #8b4513, #654321);
+        color: #ffffff;
+        border: 3px solid #ffd700;
+        padding: 20px 50px;
+        font-size: 24px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    #start-button:hover {
+        background: linear-gradient(to bottom, #a0522d, #8b4513);
+        transform: scale(1.05);
+    }
+
+    #continue-indicator {
+        position: absolute;
+        bottom: 80px;
+        right: 30px;
+        color: #ffffff;
+        font-size: 14px;
+        animation: blink 1.5s infinite;
+        z-index: 11;
+    }
+
+    @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.3; }
+    }
+
+    @media (max-width: 600px) {
+        #game-title {
+            font-size: 32px;
+        }
+
+        #start-button {
+            font-size: 20px;
+            padding: 15px 40px;
+        }
+
+        #character {
+            width: 200px;
+            height: 300px;
+        }
+
+        #text-content {
+            font-size: 14px;
+        }
+
+        .choice-button {
+            font-size: 14px;
+            padding: 12px;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="game-container">
+        <div id="title-screen">
+            <h1 id="game-title">密室の真実</h1>
+            <button id="start-button">スタート</button>
+        </div>
+
+```
+    <div id="background"></div>
+    <div id="character"></div>
+
+    <div id="text-box">
+        <div id="character-name"></div>
+        <div id="text-content"></div>
+        <div id="choices"></div>
+    </div>
+
+    <div id="continue-indicator">▼ タップで続ける</div>
+</div>
+
+<script>
+    const gameData = {
+        scenes: {
+            start: {
+                background: 'linear-gradient(to bottom, #2c1810, #1a0f0a)',
+                character: '',
+                name: '',
+                text: '深夜、豪邸で殺人事件が発生した。被害者は富豪の当主。容疑者は3人の親族。すべての扉は内側から施錠されていた完全な密室だった。',
+                next: 'intro'
+            },
+            intro: {
+                background: 'linear-gradient(to bottom, #4a4a4a, #2a2a2a)',
+                character: '',
+                name: '刑事',
+                text: 'あなたは事件現場に到着した刑事だ。現場検証の結果、3つの重要な証拠が見つかった。',
+                next: 'scene1'
+            },
+            scene1: {
+                background: 'linear-gradient(to bottom, #3d2817, #2a1a0f)',
+                character: '',
+                name: '刑事',
+                text: '被害者の書斎で発見された証拠：壊れた時計、血痕のついた花瓶、破られた遺言書。まず何を調べる？',
+                choices: [
+                    { text: '壊れた時計を詳しく調べる', next: 'clock' },
+                    { text: '花瓶の血痕を分析する', next: 'vase' },
+                    { text: '遺言書の内容を確認する', next: 'will' }
+                ]
+            },
+            clock: {
+                background: 'linear-gradient(to bottom, #1a1a2e, #0f0f1a)',
+                character: '',
+                name: '刑事',
+                text: '時計は午後11時で止まっていた。しかし、隣の部屋では11時30分まで物音がしていたという証言がある。',
+                next: 'suspect1'
+            },
+            vase: {
+                background: 'linear-gradient(to bottom, #2e1a1a, #1a0f0f)',
+                character: '',
+                name: '刑事',
+                text: '花瓶の血痕を分析した結果、被害者のものではなかった。犯人が負傷している可能性がある。',
+                next: 'suspect1'
+            },
+            will: {
+                background: 'linear-gradient(to bottom, #1a2e1a, #0f1a0f)',
+                character: '',
+                name: '刑事',
+                text: '遺言書には新しい相続人の名前が書かれていたが、破られて名前が読めない。誰かが隠そうとした？',
+                next: 'suspect1'
+            },
+            suspect1: {
+                background: 'linear-gradient(to bottom, #4a4a4a, #2a2a2a)',
+                character: '',
+                name: '刑事',
+                text: '3人の容疑者を尋問する時が来た。長男、次女、執事。誰から話を聞く？',
+                choices: [
+                    { text: '長男に話を聞く', next: 'son' },
+                    { text: '次女に話を聞く', next: 'daughter' },
+                    { text: '執事に話を聞く', next: 'butler' }
+                ]
+            },
+            son: {
+                background: 'linear-gradient(to bottom, #2e2e3a, #1a1a26)',
+                character: '',
+                name: '長男',
+                text: '私は書斎の隣の部屋にいました。確かに11時30分まで物音がしていた。でも、私じゃありません！',
+                next: 'finalChoice'
+            },
+            daughter: {
+                background: 'linear-gradient(to bottom, #3a2e2e, #261a1a)',
+                character: '',
+                name: '次女',
+                text: '執事が怪しいわ。あの人、最近手に包帯を巻いていたもの。遺言書のことも詳しく知っていたし...',
+                next: 'finalChoice'
+            },
+            butler: {
+                background: 'linear-gradient(to bottom, #2e3a2e, #1a261a)',
+                character: '',
+                name: '執事',
+                text: '私は旦那様に長年仕えてまいりました。手の怪我は庭仕事で...信じてください。',
+                next: 'finalChoice'
+            },
+            finalChoice: {
+                background: 'linear-gradient(to bottom, #1a1a2e, #0f0f1a)',
+                character: '',
+                name: '刑事',
+                text: '全ての証拠と証言を総合して、あなたは結論を出す時が来た。真犯人は誰だ？',
+                choices: [
+                    { text: '長男が犯人だ', next: 'endingSon' },
+                    { text: '次女が犯人だ', next: 'endingDaughter' },
+                    { text: '執事が犯人だ', next: 'endingButler' }
+                ]
+            },
+            endingSon: {
+                background: 'linear-gradient(to bottom, #4a0000, #2a0000)',
+                character: '',
+                name: 'エンディング',
+                text: '【BAD END】長男を逮捕したが、後日真犯人が別にいたことが判明。あなたは事件の解決に失敗した...',
+                isEnding: true
+            },
+            endingDaughter: {
+                background: 'linear-gradient(to bottom, #4a4a00, #2a2a00)',
+                character: '',
+                name: 'エンディング',
+                text: '【NORMAL END】次女を追及したが、決定的な証拠が足りず起訴できなかった。事件は未解決のまま...',
+                isEnding: true
+            },
+            endingButler: {
+                background: 'linear-gradient(to bottom, #004a00, #002a00)',
+                character: '',
+                name: 'エンディング',
+                text: '【TRUE END】執事が全てを自白した。遺言書の内容を知り、犯行を決意したという。花瓶で殴られた際の傷が決定的な証拠となった。事件は解決した！',
+                isEnding: true
+            }
+        }
+    };
+
+    let currentScene = 'start';
+    let textSpeed = 50;
+    let isTyping = false;
+
+    const titleScreen = document.getElementById('title-screen');
+    const startButton = document.getElementById('start-button');
+    const background = document.getElementById('background');
+    const characterDiv = document.getElementById('character');
+    const characterName = document.getElementById('character-name');
+    const textContent = document.getElementById('text-content');
+    const choices = document.getElementById('choices');
+    const continueIndicator = document.getElementById('continue-indicator');
+    const textBox = document.getElementById('text-box');
+
+    startButton.addEventListener('click', () => {
+        titleScreen.classList.add('hidden');
+        setTimeout(() => {
+            titleScreen.style.display = 'none';
+            showScene(currentScene);
+        }, 500);
+    });
+
+    function showScene(sceneId) {
+        const scene = gameData.scenes[sceneId];
+        currentScene = sceneId;
+
+        background.style.background = scene.background;
+        
+        characterName.textContent = scene.name;
+        textContent.textContent = '';
+        choices.style.display = 'none';
+        continueIndicator.style.display = scene.choices ? 'none' : 'block';
+
+        typeText(scene.text, () => {
+            if (scene.choices) {
+                showChoices(scene.choices);
+            } else if (scene.isEnding) {
+                continueIndicator.style.display = 'none';
+                setTimeout(() => {
+                    if (confirm('もう一度プレイしますか？')) {
+                        location.reload();
+                    }
+                }, 2000);
+            }
+        });
+    }
+
+    function typeText(text, callback) {
+        isTyping = true;
+        let index = 0;
+
+        function addChar() {
+            if (index < text.length) {
+                textContent.textContent += text[index];
+                index++;
+                setTimeout(addChar, textSpeed);
+            } else {
+                isTyping = false;
+                if (callback) callback();
+            }
+        }
+
+        addChar();
+    }
+
+    function showChoices(choiceList) {
+        choices.innerHTML = '';
+        choices.style.display = 'flex';
+
+        choiceList.forEach(choice => {
+            const button = document.createElement('button');
+            button.className = 'choice-button';
+            button.textContent = choice.text;
+            button.addEventListener('click', () => {
+                showScene(choice.next);
+            });
+            choices.appendChild(button);
+        });
+    }
+
+    textBox.addEventListener('click', (e) => {
+        if (e.target.classList.contains('choice-button')) return;
+        
+        if (isTyping) {
+            return;
+        }
+
+        const scene = gameData.scenes[currentScene];
+        if (scene.next && !scene.choices) {
+            showScene(scene.next);
+        }
+    });
+</script>
+```
+
+</body>
+</html>
