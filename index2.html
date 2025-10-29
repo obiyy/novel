@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最後のステージ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+        height: 100dvh;
+        overflow: hidden;
+        touch-action: manipulation;
+        position: fixed;
+        width: 100%;
+    }
+
+    #game-container {
+        width: 100%;
+        height: 100dvh;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #background {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        transition: background 0.8s ease;
+    }
+
+    #character {
+        position: absolute;
+        bottom: 0;
+        right: 10%;
+        width: 300px;
+        height: 400px;
+        background-size: contain;
+        background-position: bottom;
+        background-repeat: no-repeat;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+    }
+
+    #text-box {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 800px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 3px solid #87ceeb;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        z-index: 10;
+    }
+
+    #character-name {
+        color: #ff6b9d;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    #text-content {
+        color: #333;
+        font-size: 16px;
+        line-height: 1.8;
+        min-height: 60px;
+    }
+
+    #choices {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .choice-button {
+        background: linear-gradient(to bottom, #87ceeb, #6fb9dd);
+        color: #fff;
+        border: 2px solid #5a9ecc;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .choice-button:hover {
+        background: linear-gradient(to bottom, #9dd9f3, #7fc7e8);
+        border-color: #6fb9dd;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .choice-button:active {
+        transform: scale(0.98);
+    }
+
+    #title-screen {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        transition: opacity 0.5s ease;
+    }
+
+    #title-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #game-title {
+        font-size: 48px;
+        color: #ffffff;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        margin-bottom: 20px;
+    }
+
+    #game-subtitle {
+        font-size: 18px;
+        color: #f0f0f0;
+        margin-bottom: 40px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #start-button {
+        background: linear-gradient(to bottom, #ff6b9d, #ff4081);
+        color: #ffffff;
+        border: 3px solid #ffffff;
+        padding: 20px 50px;
+        font-size: 24px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    #start-button:hover {
+        background: linear-gradient(to bottom, #ff7ba9, #ff5a92);
+        transform: scale(1.05);
+    }
+
+    #continue-indicator {
+        position: absolute;
+        bottom: 100px;
+        right: 30px;
+        color: #87ceeb;
+        font-size: 14px;
+        animation: blink 1.5s infinite;
+        z-index: 11;
+        font-weight: bold;
+    }
+
+    @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.3; }
+    }
+
+    @media (max-width: 600px) {
+        #game-title {
+            font-size: 36px;
+        }
+
+        #game-subtitle {
+            font-size: 16px;
+        }
+
+        #start-button {
+            font-size: 20px;
+            padding: 15px 40px;
+        }
+
+        #character {
+            width: 200px;
+            height: 300px;
+        }
+
+        #text-content {
+            font-size: 14px;
+        }
+
+        .choice-button {
+            font-size: 14px;
+            padding: 12px;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="game-container">
+        <div id="title-screen">
+            <h1 id="game-title">最後のステージ</h1>
+            <p id="game-subtitle">〜 もう一度、あの夢を 〜</p>
+            <button id="start-button">スタート</button>
+        </div>
+
+```
+    <div id="background"></div>
+    <div id="character"></div>
+
+    <div id="text-box">
+        <div id="character-name"></div>
+        <div id="text-content"></div>
+        <div id="choices"></div>
+    </div>
+
+    <div id="continue-indicator">▼ タップで続ける</div>
+</div>
+
+<script>
+    const gameData = {
+        scenes: {
+            start: {
+                background: 'linear-gradient(to bottom, #ffd89b, #19547b)',
+                character: '',
+                name: '',
+                text: '高校3年生の秋。文化祭まであと1週間。',
+                next: 'intro1'
+            },
+            intro1: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '',
+                text: '僕は音楽室の前を通り過ぎる。中からピアノの音が聞こえる。',
+                next: 'intro2'
+            },
+            intro2: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '主人公',
+                text: 'あのピアノの音...懐かしいな。僕も昔は、あんな風に弾いていたっけ。',
+                next: 'intro3'
+            },
+            intro3: {
+                background: 'linear-gradient(to bottom, #d299c2, #fef9d7)',
+                character: '',
+                name: '',
+                text: '3年前、僕は音楽の道を目指していた。でも、コンクールでの失敗をきっかけに、すべてを諦めた。',
+                next: 'intro4'
+            },
+            intro4: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '幼馴染・美月',
+                text: '...あ、やっぱりここにいた。探したんだよ？',
+                next: 'scene1'
+            },
+            scene1: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '美月',
+                text: '文化祭のこと、聞いたよ。軽音部が急遽キーボード奏者を探してるって。ねぇ、あなたやってみない？',
+                next: 'scene2'
+            },
+            scene2: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '主人公',
+                text: '...僕が？無理だよ。もう3年もピアノに触ってないし、人前で演奏するなんて...',
+                next: 'scene3'
+            },
+            scene3: {
+                background: 'linear-gradient(to bottom, #ff9a9e, #fecfef)',
+                character: '',
+                name: '美月',
+                text: 'でも、あなたは本当は今でも音楽が好きなんでしょ？音楽室の前で立ち止まってるの、私見てたよ。',
+                next: 'choice1'
+            },
+            choice1: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '主人公',
+                text: '美月の言葉が胸に刺さる。確かに、僕は今でも音楽が好きだ。でも...',
+                choices: [
+                    { text: '「...やってみようかな」と答える', next: 'path_courage' },
+                    { text: '「でも、また失敗するのが怖い」と本音を言う', next: 'path_honest' },
+                    { text: '「ごめん、やっぱり無理だ」と断る', next: 'path_refuse' }
+                ]
+            },
+            path_courage: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '美月',
+                text: 'ほんと！？やった！絶対後悔させないから！',
+                next: 'practice1'
+            },
+            practice1: {
+                background: 'linear-gradient(to bottom, #e0c3fc, #8ec5fc)',
+                character: '',
+                name: '',
+                text: 'その日から、毎日放課後に練習が始まった。最初は指が全然動かなかった。',
+                next: 'practice2'
+            },
+            practice2: {
+                background: 'linear-gradient(to bottom, #fbc2eb, #a6c1ee)',
+                character: '',
+                name: 'バンドメンバー',
+                text: '大丈夫、焦らなくていいよ。俺たちもそんなに上手くないし、一緒に楽しもう！',
+                next: 'practice3'
+            },
+            practice3: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '',
+                text: '仲間たちの温かさに支えられ、少しずつピアノの感覚が戻ってきた。そして文化祭当日——',
+                next: 'stage_courage'
+            },
+            stage_courage: {
+                background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                character: '',
+                name: '',
+                text: 'ステージの上。客席には大勢の観客。心臓が高鳴る。',
+                next: 'stage_courage2'
+            },
+            stage_courage2: {
+                background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                character: '',
+                name: '主人公',
+                text: '（深呼吸）...よし、楽しもう。あの日の失敗も、すべて今の僕を作ってくれたんだ。',
+                next: 'ending_true'
+            },
+            ending_true: {
+                background: 'linear-gradient(to bottom, #fa709a, #fee140)',
+                character: '',
+                name: '',
+                text: '【TRUE END：新しい旋律】\n\n演奏は完璧じゃなかった。でも、心から音楽を楽しんでいる僕たちの姿は、観客に届いた。演奏後、客席からは大きな拍手が。美月が涙を浮かべて笑っていた。僕は再び、音楽と向き合う勇気を取り戻した。',
+                isEnding: true
+            },
+            path_honest: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '美月',
+                text: '...そっか。正直に言ってくれてありがとう。でもね、失敗が怖いのはみんな同じだよ。',
+                next: 'honest2'
+            },
+            honest2: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '美月',
+                text: 'あのね、実は私も文化祭で歌うことになったの。すっごく緊張してる。だから...一緒に頑張らない？',
+                next: 'honest3'
+            },
+            honest3: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '主人公',
+                text: '美月も...？そうか、みんな怖いんだ。僕だけじゃない。',
+                choices: [
+                    { text: '「うん、一緒に頑張ろう」', next: 'practice1' },
+                    { text: '「美月の応援はするよ」', next: 'support_path' }
+                ]
+            },
+            support_path: {
+                background: 'linear-gradient(to bottom, #d299c2, #fef9d7)',
+                character: '',
+                name: '美月',
+                text: 'そっか...ありがとう。でも、いつかあなたの演奏、また聴きたいな。',
+                next: 'support2'
+            },
+            support2: {
+                background: 'linear-gradient(to bottom, #fbc2eb, #a6c1ee)',
+                character: '',
+                name: '',
+                text: '文化祭当日。僕は客席から美月の歌を聴いていた。',
+                next: 'support3'
+            },
+            support3: {
+                background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                character: '',
+                name: '',
+                text: '美月の歌声は、少し震えていた。でも、その一生懸命さが心に響いた。',
+                next: 'support4'
+            },
+            support4: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '主人公',
+                text: '美月、すごく頑張ってる...僕も、いつか、もう一度。',
+                next: 'ending_normal'
+            },
+            ending_normal: {
+                background: 'linear-gradient(to bottom, #ffecd2, #fcb69f)',
+                character: '',
+                name: '',
+                text: '【NORMAL END：いつかまた】\n\n今回、僕はステージに立つ勇気が出なかった。でも、美月の姿を見て、小さな希望が芽生えた。音楽への想いは、まだ消えていない。いつか、また。そう思えるようになった。それは小さいけれど、確かな一歩だった。',
+                isEnding: true
+            },
+            path_refuse: {
+                background: 'linear-gradient(to bottom, #d299c2, #fef9d7)',
+                character: '',
+                name: '美月',
+                text: 'そっか...わかった。無理にとは言わないよ。',
+                next: 'refuse2'
+            },
+            refuse2: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '',
+                text: '美月は少し寂しそうに笑って、去っていった。',
+                next: 'refuse3'
+            },
+            refuse3: {
+                background: 'linear-gradient(to bottom, #fbc2eb, #a6c1ee)',
+                character: '',
+                name: '',
+                text: '文化祭当日。僕は音楽室の前を通りかかった。',
+                next: 'refuse4'
+            },
+            refuse4: {
+                background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                character: '',
+                name: '',
+                text: '体育館からは、楽しそうな音楽が聞こえてくる。美月の歌声も聞こえた気がした。',
+                next: 'refuse5'
+            },
+            refuse5: {
+                background: 'linear-gradient(to bottom, #d299c2, #fef9d7)',
+                character: '',
+                name: '主人公',
+                text: '僕は音楽室の扉を開けた。誰もいないピアノの前に座る。',
+                next: 'refuse6'
+            },
+            refuse6: {
+                background: 'linear-gradient(to bottom, #a8edea, #fed6e3)',
+                character: '',
+                name: '主人公',
+                text: '静かに、鍵盤に指を置く。音は、出さなかった。',
+                next: 'ending_bitter'
+            },
+            ending_bitter: {
+                background: 'linear-gradient(to bottom, #8e9eab, #eef2f3)',
+                character: '',
+                name: '',
+                text: '【BITTER END：静かな音楽室】\n\n今日も、僕は音を出せなかった。でも、音楽への想いは消えない。ただ、手を伸ばす勇気がない。遠くから聞こえる楽しそうな音楽。それはもう、僕のものではないのかもしれない。それでも、いつか——そう思いながら、僕は静かに音楽室を後にした。',
+                isEnding: true
+            }
+        }
+    };
+
+    let currentScene = 'start';
+    let textSpeed = 40;
+    let isTyping = false;
+
+    const titleScreen = document.getElementById('title-screen');
+    const startButton = document.getElementById('start-button');
+    const background = document.getElementById('background');
+    const characterDiv = document.getElementById('character');
+    const characterName = document.getElementById('character-name');
+    const textContent = document.getElementById('text-content');
+    const choices = document.getElementById('choices');
+    const continueIndicator = document.getElementById('continue-indicator');
+    const textBox = document.getElementById('text-box');
+
+    startButton.addEventListener('click', () => {
+        titleScreen.classList.add('hidden');
+        setTimeout(() => {
+            titleScreen.style.display = 'none';
+            showScene(currentScene);
+        }, 500);
+    });
+
+    function showScene(sceneId) {
+        const scene = gameData.scenes[sceneId];
+        currentScene = sceneId;
+
+        background.style.background = scene.background;
+        
+        characterName.textContent = scene.name;
+        textContent.textContent = '';
+        choices.style.display = 'none';
+        continueIndicator.style.display = scene.choices ? 'none' : 'block';
+
+        typeText(scene.text, () => {
+            if (scene.choices) {
+                showChoices(scene.choices);
+            } else if (scene.isEnding) {
+                continueIndicator.style.display = 'none';
+                setTimeout(() => {
+                    if (confirm('もう一度プレイしますか？')) {
+                        location.reload();
+                    }
+                }, 3000);
+            }
+        });
+    }
+
+    function typeText(text, callback) {
+        isTyping = true;
+        let index = 0;
+
+        function addChar() {
+            if (index < text.length) {
+                textContent.textContent += text[index];
+                index++;
+                setTimeout(addChar, textSpeed);
+            } else {
+                isTyping = false;
+                if (callback) callback();
+            }
+        }
+
+        addChar();
+    }
+
+    function showChoices(choiceList) {
+        choices.innerHTML = '';
+        choices.style.display = 'flex';
+
+        choiceList.forEach(choice => {
+            const button = document.createElement('button');
+            button.className = 'choice-button';
+            button.textContent = choice.text;
+            button.addEventListener('click', () => {
+                showScene(choice.next);
+            });
+            choices.appendChild(button);
+        });
+    }
+
+    textBox.addEventListener('click', (e) => {
+        if (e.target.classList.contains('choice-button')) return;
+        
+        if (isTyping) {
+            return;
+        }
+
+        const scene = gameData.scenes[currentScene];
+        if (scene.next && !scene.choices) {
+            showScene(scene.next);
+        }
+    });
+</script>
+```
+
+</body>
+</html>
